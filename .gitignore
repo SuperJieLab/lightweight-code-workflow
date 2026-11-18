@@ -5,3 +5,4 @@ __pycache__/
 .workbuddy/
 .scratch/
 node_modules/
+expert/

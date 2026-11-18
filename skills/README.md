@@ -63,7 +63,7 @@ status: executing     # draft | approved | executing | done | reviewed | closed�
 | 目录 | 装什么 | 本套件里 |
 |---|---|---|
 | `scripts/` | 可执行代码，跑起来比让模型照做可靠 | 状态推导、骨架初始化、引文定位 |
-| `references/` | 读入上下文供判断的材料 | 语言检查清单 |
+| `references/` | 读入上下文供判断的材料 | 语言检查清单、结构判据库 |
 | `assets/` | 会被复制进产物的模板 | spec / plan / dev 四份文档模板 |
 
 **结构纪律：有真实先后的用 `## 流程` 容器，没有的不用。**
@@ -93,25 +93,17 @@ status: executing     # draft | approved | executing | done | reviewed | closed�
 
 **脚本失败就报错，不预写备用路径。** 非零退出和异常栈本身就是可感知的信号，届时按 `SKILL.md` 正文判断即可。预写一套手工步骤等于维护第二份实现，而它会与脚本悄悄不一致，且没人检查这种不一致。
 
-## 六、当前进度
-
-十份均已逐份 review 过一遍。
+## 六、各 skill 的附带文件
 
 | skill | 层 | 附带文件 |
 |---|---|---|
 | `workspace-init` | 工作区 | `scripts/init.py`、`assets/` 四份模板 |
 | `workspace-status` | 工作区 | `scripts/status.py` |
 | `spec-generation` | 节点 R1 | `assets/spec.md.template` |
-| `plan-generation` | 节点 R2 | `assets/plan.md.template` |
+| `plan-generation` | 节点 R2 | `assets/plan.md.template`、`references/structure-rules.md`、`scripts/structure-probe.py` |
 | `tdd` | 节点 R3 | — |
 | `code-review` | 节点 R4 | `references/lang-checklist.md`、`scripts/locate.py` |
 | `code-slim-audit` | 节点 R5 | — |
 | `spec-verify` | 节点 R6 | — |
 | `research` | 通用能力 | — |
 | `grill-me` | 通用能力 | — |
-
-## 七、还没做的
-
-- **打包成插件**。现在是一组散放的 skill 目录，`.codebuddy-plugin/plugin.json` 未建。要装到本地市场时再打，届时 `README.md` 与 `skills/` 需要按插件结构归位。
-- **脚本可执行性实测**。skill 能否携带 `scripts/` 并被触发执行，尚未验证，真实环境里跑一次才能确认。
-- **静态死代码工具选型**。`code-slim-audit` 里给了命令示意，具体工具与误报率需要在真实项目上实测。

@@ -74,7 +74,7 @@ dev/                          工作区产物
 
 ## 设计与取舍
 
-`WORKFLOW-DESIGN.md` 是设计依据：27 条已定决策、10 条已关闭的待定项、24 次版本变更，每一条都带判据与反例，以及**被否决的方案和否决理由**。比如为什么不做「调研独立成节点」，为什么取消「research / evidence 两个目录」，为什么 workspace-status 不替用户启动下一个 skill。
+`WORKFLOW-DESIGN.md` 是设计依据：每一条决策都带判据与反例，以及**被否决的方案和否决理由**。比如为什么不做「调研独立成节点」，为什么取消「research / evidence 两个目录」，为什么 workspace-status 不替用户启动下一个 skill。
 
 想知道某个设计为什么长这样，答案在那里；想知道怎么用，看 `skills/README.md`（每份 skill 的构成规范、结构纪律、依赖纪律）。
 
