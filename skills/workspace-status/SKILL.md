@@ -43,6 +43,7 @@ python3 <本 skill 目录>/scripts/status.py <仓库根目录>
 feature: F12
 topic: 未读按会话维度
 status: draft        # draft | approved | delivered | superseded
+phases: 3            # 本 spec 共几期；不写 = 1
 ---
 ```
 
@@ -64,15 +65,17 @@ status: draft        # draft | approved | executing | done | reviewed | closed |
 | spec | plans | 阶段 | 下一步 |
 |---|---|---|---|
 | `draft` | 任意，且全部为 `draft` | 承诺未定 | R1 `spec-generation` |
-| `approved` | 无 | 待写方案 | R2 `plan-generation` |
+| `approved` | 第 k 期（k ≤ `phases`）的 plan 不存在 | 待写方案 | R2 `plan-generation` |
 | `approved` | 有 `draft` | 方案未定 | R2 `plan-generation` |
 | `approved` | 有 `approved` 未开工 | 待执行 | R3 `tdd` |
 | `approved` | 有 `executing` | 执行中 | R3 `tdd` |
 | `approved` | 有 `done` | 待复核 | R4 `code-review` |
 | `approved` | 有 `reviewed` | 待精简 | R5 `code-slim-audit` |
-| `approved` | 全部 `closed` | 待交付 | R6 `spec-verify` |
+| `approved` | 1..`phases` 每期都已 `closed` 或 `abandoned` | 待交付 | R6 `spec-verify` |
 | `delivered` | 全部 `closed` | 已完成 | — |
 | 任意 | 有 `abandoned` 且其余全 `closed` | 该分期已放弃 | 同上，按剩余 plan 判断 |
+
+**「全部 closed」不是「现有 plan 都 closed」，是「声明的每一期都 close 了」。** 这份 spec 分几期由它头部的 `phases` 定，不由 plan 目录里现有几个文件定——只看现有文件，一期交付完就会被判成整个 spec 完成。`abandoned` 算已了结。
 
 同一 Feature 有多个分期时，**取分期号最小的未完成分期**。取最后一个会错在这样的情形：F6 正在执行、F7 刚建 spec 尚未开工，取最后一个会定位到 F7。
 
@@ -99,7 +102,7 @@ status: draft        # draft | approved | executing | done | reviewed | closed |
 
 ## 矛盾检查
 
-至少这六条，发现即如实摆出，**不擅自选边**：
+至少这七条，发现即如实摆出，**不擅自选边**：
 
 1. `spec` 仍是 `draft`，但存在非 `draft` 的 plan（除主动重开的情形外，说明有人跳过了批准）。
 2. `spec` 已 `delivered`，但存在非 `closed` 的 plan。
@@ -107,6 +110,7 @@ status: draft        # draft | approved | executing | done | reviewed | closed |
 4. 某分期 `approved`，但它依赖的前一个分期还不是 `closed`。
 5. plan 的 `feature` 字段与所在目录编号不一致。
 6. 任务勾选数与有结果行的任务数不等（脚本粗查：`- [x]` 数量 vs 统计块里 `结果：` 的数量）。
+7. plan 的期号超过 spec 声明的 `phases`（多加了一期），或 `phases` 不是正整数。
 
 矛盾不由状态机产生，它来自本流程之外对文件头的改动。报出之后由人决定怎么修，此处不做修复。
 
@@ -119,6 +123,7 @@ status: draft        # draft | approved | executing | done | reviewed | closed |
 |---|---|---|---|---|
 | F12 | 未读按会话维度 | 执行中 | R3 tdd | — |
 | F13 | 群公告已读 | 待写方案 | R2 plan-generation | 依赖 F12 第 2 分期 |
+| F11 | 会话置顶 | 待写方案 | R2 plan-generation | 第 2 期还没有方案 |
 
 ## 矛盾
 

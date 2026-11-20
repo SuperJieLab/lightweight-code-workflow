@@ -51,7 +51,7 @@ python3 <本 skill 目录>/scripts/init.py <仓库根目录>
 
 1. `dev/` 下四份文档都存在；
 2. `dev/research/` 与 `dev/features/` 都存在；
-3. 没有覆盖任何既有的 `dev/` 文档（跑前跑后对比 `dev/` 下既有文件的内容，变了就是覆盖；记忆层的追加不算覆盖）；
+3. 没有覆盖任何既有的 `dev/` 文档。判法：跑前 `find dev -type f -exec shasum {} + | sort` 存一份，跑完再取一次比对，两次不一致就是覆盖（记忆层的追加不算覆盖，它在 `.workbuddy/` 下）；
 4. `.workbuddy/memory/MEMORY.md` 里有工作流桥接块——首次运行新建或追加，再次运行报「已存在」；
 5. 报告里列清了「新建」与「复用」。
 

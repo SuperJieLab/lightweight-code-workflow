@@ -41,6 +41,18 @@ def read_head(path):
     return head, text[m.end():]
 
 
+def phases_of(spec):
+    """spec 声明的期数。缺省 1；非法（非正整数）返回 None，由 check 报。"""
+    raw = spec.get("phases", "").strip()
+    if not raw:
+        return 1
+    try:
+        n = int(raw)
+    except ValueError:
+        return None
+    return n if n >= 1 else None
+
+
 def load_plans(fdir):
     plans = []
     pdir = os.path.join(fdir, "plans")
@@ -85,22 +97,29 @@ def derive(spec, plans, fid):
     if status == "draft":
         return "承诺未定", "R1 spec-generation", ""
 
-    active = [p for p in plans if p["status"] != "abandoned"]
-    if not active:
-        return "待写方案", "R2 plan-generation", ""
+    total = phases_of(spec) or 1
+    by_phase = {}
+    for p in plans:
+        by_phase.setdefault(p["phase"], p)
 
-    pending = [p for p in active if p["status"] != "closed"]
-    if not pending:
-        return "待交付", "R6 spec-verify", ""
+    # 按 1..phases 顺序找第一个未完成期：plan 不存在，或 plan 未 closed。
+    # 「全部 closed」不是「现有 plan 都 closed」，是「声明的每一期都 close 了」。
+    # abandoned 算已了结——放弃是退役，不该再要求补一期。
+    for k in range(1, total + 1):
+        p = by_phase.get(k)
+        if p is None:
+            return "待写方案", "R2 plan-generation", "第 %d 期还没有方案" % k
+        if p["status"] in ("closed", "abandoned"):
+            continue
+        stage, nxt = NEXT_BY_PLAN.get(p["status"], ("状态未知", "修 plan 文件头"))
+        block = ""
+        if p["status"] != "draft" and k > 1:
+            prev = by_phase.get(k - 1)
+            if prev is not None and prev["status"] not in ("closed", "abandoned"):
+                block = "第 %d 分期未 closed" % (k - 1)
+        return stage, nxt, block
 
-    first = pending[0]
-    stage, nxt = NEXT_BY_PLAN.get(first["status"], ("状态未知", "修 plan 文件头"))
-    block = ""
-    if first["status"] != "draft" and first["phase"] > 1:
-        prev = [p for p in active if p["phase"] == first["phase"] - 1]
-        if prev and prev[0]["status"] != "closed":
-            block = "第 %d 分期未 closed" % (first["phase"] - 1)
-    return stage, nxt, block
+    return "待交付", "R6 spec-verify", ""
 
 
 def check(spec, plans, fid, dirname):
@@ -135,13 +154,14 @@ def check(spec, plans, fid, dirname):
         if bad:
             issues.append("%s：spec 已 delivered，但 %s 未 closed" % (fid, "、".join(bad)))
 
-    # 3. 分期号断号或重号
-    phases = [p["phase"] for p in plans if p["status"] != "abandoned"]
-    if phases:
-        if len(set(phases)) != len(phases):
-            issues.append("%s：分期号重号（%s）" % (fid, phases))
-        if sorted(phases) != list(range(1, len(phases) + 1)):
-            issues.append("%s：分期号不连续（%s）" % (fid, sorted(phases)))
+    # 3. 分期号断号或重号。按全部 plan 判：放弃只是退役，不释放号码，
+    #    滤掉 abandoned 会把「第 1 期放弃、第 2 期在跑」误报成断号。
+    phase_list = [p["phase"] for p in plans]
+    if phase_list:
+        if len(set(phase_list)) != len(phase_list):
+            issues.append("%s：分期号重号（%s）" % (fid, phase_list))
+        if sorted(phase_list) != list(range(1, len(phase_list) + 1)):
+            issues.append("%s：分期号不连续（%s）" % (fid, sorted(phase_list)))
 
     # 4. 某分期 approved 但前一个分期未 closed
     active = [p for p in plans if p["status"] != "abandoned"]
@@ -153,6 +173,16 @@ def check(spec, plans, fid, dirname):
             issues.append("%s：第 %d 分期已 %s，但第 %d 分期仍是 %s"
                           % (fid, p["phase"], p["status"], p["phase"] - 1, prev[0]["status"]))
 
+    # 5. 期数声明与 plan 期号对不上
+    total = phases_of(spec)
+    if total is None:
+        issues.append("%s：spec 的 phases 不是正整数（%s）" % (fid, spec.get("phases", "")))
+    else:
+        over = sorted({p["phase"] for p in plans if p["phase"] > total})
+        if over:
+            issues.append("%s：plan 期号 %s 超过 spec 声明的 phases=%d（多加了一期）"
+                          % (fid, "、".join(str(x) for x in over), total))
+
     # 6. 勾选数与结果行数不等
     for p in plans:
         if p["checked"] != p["results"]:
@@ -160,6 +190,13 @@ def check(spec, plans, fid, dirname):
                           % (fid, p["file"], p["checked"], p["results"]))
 
     return issues
+
+
+def _fid_sort_key(dirname):
+    """按 F 后的数字排序，不按字符串：'F10' 必须排在 'F2' 之后。
+    不以 F<数字> 开头的目录排到最后，彼此按名字排。"""
+    m = re.match(r"^F(\d+)", dirname)
+    return (0, int(m.group(1)), dirname) if m else (1, 0, dirname)
 
 
 def main():
@@ -172,7 +209,7 @@ def main():
 
     rows, issues = [], []
     max_id = 0
-    for dirname in sorted(os.listdir(froot)):
+    for dirname in sorted(os.listdir(froot), key=_fid_sort_key):
         fdir = os.path.join(froot, dirname)
         if not os.path.isdir(fdir):
             continue

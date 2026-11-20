@@ -120,7 +120,7 @@ dev/
 | `approved` | 有 `executing` | 执行中 | R3 执行 |
 | `approved` | 有 `done` | 待复核 | R4 复核 |
 | `approved` | 有 `reviewed` | 待精简 | R5 精简 |
-| `approved` | 全部 `closed` | 待核验 | R6 核验（承诺对照 + 结项综述 + 回写）→ 置 `delivered` |
+| `approved` | 全部 `closed` | 待交付 | R6 核验（承诺对照 + 结项综述 + 回写）→ 置 `delivered` |
 | `delivered` | 全部 `closed` | 已完成 | — |
 
 plan 的完整状态链：`draft → approved → executing → done → reviewed → closed`（另有 `abandoned`）。**`done` 的定义是可判定的：全部任务勾选，且每项都有结果行**（见 D21）。**顺序由状态机承载，不由某个执行者承载**：每完成一步推一格，非法跃迁（如 `executing` 直接跳 `closed`）由 `workspace-status` 报错。这一版撤回了「复核与精简的进度不记状态、读 `checks/` 目录推断」的做法——那个做法成立的前提是存在一个按序执行的收口者，而现在不设收口执行者，顺序必须落到状态机上。
