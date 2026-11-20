@@ -6,3 +6,5 @@ __pycache__/
 .scratch/
 node_modules/
 expert/
+# 本机分发脚本：写死了 ~/.workbuddy 的绝对路径，只对本机有效
+/scripts/distribute.py
